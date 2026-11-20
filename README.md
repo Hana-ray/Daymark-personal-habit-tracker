@@ -2,6 +2,9 @@
 
 A personal habit tracker in Java with Spring Boot, Spring Security, Thymeleaf, and JDBC. The hosted app uses PostgreSQL. Local mode uses persistent H2 storage.
 
+## Live Demo
+[View Daymark – Personal Habit Tracker](https://daymark-habits.onrender.com/)
+
 ## Local demo
 
 Install Java 17+ and Maven. From this folder run `mvn spring-boot:run`, then open http://localhost:3300. Choose **Create an account** and select your time zone. Add a daily or weekday habit, check it off, undo it, and open **Progress** for the last 28 days and streaks. Edit or archive habits from **Your habits** on Today or from Progress.
