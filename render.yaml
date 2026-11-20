@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: daymark-habits
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USER
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"

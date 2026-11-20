@@ -1,0 +1,15 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Daymark · Account</title><link rel="stylesheet" th:href="@{/style.css}"></head>
+<body class="auth"><aside><strong class="brand"><span class="brand-icon" aria-hidden="true">✓</span> Daymark</strong><h1>Make today<br><em>count.</em></h1><div class="auth-pattern" aria-hidden="true"><span>✓</span><span>✓</span><span>○</span><span>✓</span></div></aside><main>
+<h2 th:text="${register == true ? 'Create your account' : 'Sign in'}"></h2>
+<p class="message error" th:if="${error}" role="alert" th:text="${error}"></p>
+<p class="message error" th:if="${param.error}" role="alert">Email or password was incorrect.</p>
+<p class="message" th:if="${param.created}" role="status">Account created. You can now sign in.</p>
+<p class="message error" th:if="${param.expired}" role="alert">This form expired. Please enter your details again.</p>
+<form th:action="${register == true ? '/register' : '/login'}" method="post">
+<label>Email<input type="email" th:name="${register == true ? 'email' : 'username'}" required autocomplete="username" maxlength="150"></label>
+<label>Password<input type="password" name="password" required th:autocomplete="${register == true ? 'new-password' : 'current-password'}" th:minlength="${register == true ? 12 : null}" maxlength="72"></label>
+<label th:if="${register == true}">Time zone<select name="zone"><option th:each="zone : ${zones}" th:value="${zone}" th:text="${zone}" th:selected="${zone == 'Asia/Yangon'}"></option></select></label>
+<button th:text="${register == true ? 'Create account' : 'Sign in'}"></button>
+</form><p><a th:href="${register == true ? '/login' : '/register'}" th:text="${register == true ? 'Back to sign in' : 'Create an account'}"></a></p>
+</main></body></html>

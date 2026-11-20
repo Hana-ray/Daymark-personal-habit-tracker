@@ -1,0 +1,72 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Daymark · Habit tracker</title><link rel="stylesheet" th:href="@{/style.css}"></head>
+<body><header><div class="shell top"><a class="brand" th:href="@{/}"><span class="brand-icon" aria-hidden="true">✓</span> Daymark</a>
+<nav aria-label="Main navigation"><a th:href="@{/}" th:attr="aria-current=${!history and !calendarView ? 'page' : null}">Today</a><a th:href="@{/progress}" th:attr="aria-current=${history ? 'page' : null}">Progress</a><a th:href="@{/calendar}" th:attr="aria-current=${calendarView ? 'page' : null}">Calendar</a></nav>
+<form th:action="@{/logout}" method="post"><button class="quiet">Sign out</button></form></div></header>
+<main class="shell">
+<div class="heading"><h1 th:text="${calendarView ? 'Monthly calendar' : (history ? 'Your progress' : 'Today')}"></h1><time th:attr="datetime=${today}" th:text="${today}"></time></div>
+<form class="category-filter" th:action="${currentPath}" method="get">
+<input th:if="${calendarView}" type="hidden" name="month" th:value="${selectedMonth}">
+<label>Filter by category<select name="category"><option value="">All categories</option>
+<option th:each="item : ${categories}" th:value="${item}" th:text="${item}" th:selected="${category == item}"></option></select></label><button class="quiet">Apply</button></form>
+<section class="hero" th:unless="${history or calendarView}"><div><h2>Daily progress</h2><p th:text="|${complete} of ${#lists.size(due)} habits complete|"></p></div>
+<div class="progress-box"><strong th:text="|${percent}%|"></strong><progress aria-label="Daily progress" max="100" th:value="${percent}"></progress></div></section>
+<div class="columns" th:unless="${history or calendarView}">
+<section class="panel"><h2>Due today</h2><p class="empty" th:if="${#lists.isEmpty(due)}">No habits scheduled today.</p>
+<div class="habit-row" th:each="entry : ${due}"><strong class="habit-name"><span class="habit-indicator" aria-hidden="true" th:text="${entry.done ? '✓' : '○'}"></span><span th:text="${entry.habit.name}"></span></strong>
+<form th:action="@{/habits/{id}/check(id=${entry.habit.id})}" method="post">
+<input type="hidden" name="done" th:value="${!entry.done}"><button th:class="${entry.done ? 'quiet' : ''}" th:text="${entry.done ? '✓ Undo' : 'Mark complete'}"></button>
+</form></div></section>
+<section class="panel" id="editor"><h2 th:text="${editing == null ? 'New habit' : 'Edit habit'}"></h2><p class="message error" role="alert" th:if="${param.invalid}">Enter a name and choose at least one weekday.</p>
+<form th:action="@{/habits}" method="post" class="editor">
+<input th:if="${editing != null}" type="hidden" name="id" th:value="${editing.id}">
+<label>Habit name<input name="name" required maxlength="80" placeholder="Read for 15 minutes" th:value="${editing?.name}"></label>
+<label>Category<select name="category"><option th:each="item : ${categories}" th:value="${item}" th:text="${item}" th:selected="${editing != null and editing.category == item}"></option></select></label>
+<fieldset><legend>Repeat on</legend><div class="weekdays"><label th:each="day : ${weekdays}">
+<input type="checkbox" name="weekdays" th:value="${day.value}" th:checked="${editing == null or editing.scheduled(day.value)}">
+<span th:text="${#strings.substring(day.name(),0,3)}"></span></label></div></fieldset>
+<button th:text="${editing == null ? 'Add habit' : 'Save changes'}"></button><a th:if="${editing != null}" th:href="@{/}">Cancel</a>
+</form></section></div>
+<section class="panel habit-library" th:unless="${history or calendarView}">
+<div class="heading"><h2>Your habits</h2><a href="#editor">Add habit</a></div>
+<p class="empty" th:if="${#lists.isEmpty(activeHabits)}">Add your first habit to start tracking.</p>
+<div class="habit-row" th:each="habit : ${activeHabits}">
+<div><strong th:text="${habit.name}"></strong><p class="schedule-label" th:text="|${habit.category} · ${habit.repeatLabel()}|"></p></div>
+<div class="actions"><a th:href="@{/(edit=${habit.id})}">Edit</a>
+<form th:action="@{/habits/{id}/archive(id=${habit.id})}" method="post"><button class="quiet">Archive</button></form></div>
+</div></section>
+<section class="panel weekly-summary" th:if="${history}">
+<h2>Last 7 days</h2>
+<p th:text="|${weeklyDone} of ${weeklyDue} scheduled check-ins complete|"></p>
+<progress aria-label="Weekly completion" th:max="${weeklyDue == 0 ? 1 : weeklyDue}" th:value="${weeklyDone}"></progress>
+</section>
+<section class="panel" th:if="${history}"><h2>Last 28 days</h2>
+<p class="legend"><span class="dot complete"></span> Complete <span class="dot missed"></span> Scheduled <span class="dot"></span> Off day</p>
+<p class="empty" th:if="${#lists.isEmpty(progress)}">Create a habit from Today to start tracking.</p>
+<article class="history" th:each="entry : ${progress}">
+<div class="habit-row"><h3 th:text="${entry.habit.name}"></h3>
+<div class="actions" th:if="${entry.habit.archived == null}">
+<a th:href="@{/(edit=${entry.habit.id})}">Edit</a>
+<form th:action="@{/habits/{id}/archive(id=${entry.habit.id})}" method="post"><button class="quiet">Archive</button></form>
+</div><span th:if="${entry.habit.archived != null}">Archived</span></div>
+<p th:text="|Current streak: ${entry.current} · Best: ${entry.best} · Last 7 days: ${entry.completed}/${entry.due}|"></p>
+<div class="calendar" role="group" th:attr="aria-label=|${entry.habit.name} check-in history|">
+<span th:each="day : ${entry.days}" role="img" th:class="|dot ${day.done ? 'complete' : (day.due ? 'missed' : '')}|" th:title="|${day.date}: ${day.done ? 'Complete' : (day.due ? 'Scheduled' : 'Off day')}|" th:attr="aria-label=|${day.date}: ${day.done ? 'Complete' : (day.due ? 'Scheduled' : 'Off day')}|"></span>
+</div></article></section>
+<section class="panel" th:if="${calendarView}">
+<div class="heading"><a th:href="@{/calendar(month=${previousMonth},category=${category})}" aria-label="Previous month">← Previous</a>
+<h2 th:text="${selectedMonth}"></h2><a th:href="@{/calendar(month=${nextMonth},category=${category})}" aria-label="Next month">Next →</a></div>
+<div class="month-grid">
+<strong th:each="label : ${weekdays}" th:text="${#strings.substring(label.name(),0,3)}"></strong>
+<span th:each="blank : ${blankDays}" aria-hidden="true"></span>
+<a th:each="cell : ${calendarDays}" th:href="@{/calendar(month=${selectedMonth},day=${cell.date},category=${category})}"
+th:class="|${cell.date == selectedDay ? 'selected' : ''} ${cell.date == today ? 'today' : ''}|"
+th:attr="aria-label=|${cell.date}, ${cell.completed} complete of ${cell.scheduled} scheduled|">
+<strong th:text="${cell.date.dayOfMonth}"></strong><small th:if="${cell.scheduled > 0}" th:text="${cell.future ? cell.scheduled + ' due' : cell.completed + '/' + cell.scheduled}"></small></a>
+</div>
+<h2 class="day-heading" th:text="${selectedDay}"></h2>
+<p class="empty" th:if="${#lists.isEmpty(dayHabits)}">No habits scheduled for this day.</p>
+<div class="habit-row" th:each="habit : ${dayHabits}"><div><strong th:text="${habit.name}"></strong><p class="schedule-label" th:text="${habit.category}"></p></div>
+<span th:text="${entries.containsKey(habit.id) and entries.get(habit.id).contains(selectedDay) ? 'Complete' : (selectedDay.isAfter(today) ? 'Upcoming' : (selectedDay == today ? 'Not completed' : 'Missed'))}"></span></div>
+</section>
+</main></body></html>
